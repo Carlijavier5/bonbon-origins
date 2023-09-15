@@ -5,14 +5,16 @@ using UnityEngine;
 
 public class SkillAction {
     private SkillObject _data;
+    private Actor _caster;
     private Actor _target;
 
     public SkillAction(SkillObject data) {
         _data = data;
     }
     
-    public SkillAction(SkillObject data, Actor target) {
+    public SkillAction(SkillObject data, Actor caster, Actor target) {
         _data = data;
+        _caster = caster;
         _target = target;
     }
 

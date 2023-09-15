@@ -17,11 +17,27 @@ public class Actor : MonoBehaviour, IComparable<Actor>
     #endregion Accessors
     
     #region Variable Attributes
+
     [SerializeField] private float _hitpoints;
     private bool _defeated;
     private int _stamina;
+
     #endregion Variable Attributes
-    
+
+    #region Level Skills & Bonbons
+
+    private List<SkillObject> skillList;
+
+    private List<BonbonObject> bonbonList;
+
+    #endregion
+
+    #region Bonbon Inventory
+
+    private BonbonObject[] bonbonInventory = new BonbonObject[4];
+
+    #endregion
+
     protected virtual void Start()
     {
         InitializeAttributes();
