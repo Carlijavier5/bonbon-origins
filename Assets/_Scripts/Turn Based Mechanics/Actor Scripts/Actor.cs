@@ -26,21 +26,22 @@ public class Actor : MonoBehaviour, IComparable<Actor>
 
     #region Level Skills & Bonbons
 
-    private List<SkillObject> skillList;
+    protected List<SkillObject> skillList;
 
-    private List<BonbonObject> bonbonList;
+    protected List<BonbonObject> bonbonList;
 
     #endregion
 
     #region Bonbon Inventory
 
-    private BonbonObject[] bonbonInventory = new BonbonObject[4];
+    protected BonbonObject[] bonbonInventory = new BonbonObject[4];
 
     #endregion
 
     protected virtual void Start()
     {
         InitializeAttributes();
+        InitializeLevelObjects();
     }
 
     protected virtual void InitializeAttributes() {
@@ -48,6 +49,8 @@ public class Actor : MonoBehaviour, IComparable<Actor>
         _stamina = data.MaxStamina();
         _defeated = false;
     }
+
+    protected virtual void InitializeLevelObjects() { }
 
     //Returns true if Actor has no remaining health.
     public bool DepleteHitpoints(float damage) {

@@ -39,8 +39,8 @@ public class SkillAction {
     }
 
     public void ActivateSkill() {
-        _target.DepleteHitpoints(_data.damageAmount);
-        _target.RestoreHitpoints(_data.healAmount);
+        //_target.DepleteHitpoints(_data.damageAmount);
+        //_target.RestoreHitpoints(_data.healAmount);
     }
 
     public void Clear() {

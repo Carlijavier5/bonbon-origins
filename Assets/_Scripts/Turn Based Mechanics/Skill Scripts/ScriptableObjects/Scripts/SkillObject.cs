@@ -14,12 +14,16 @@ public class SkillObject : ScriptableObject {
     [Tooltip("The name of the skill. Type how this skill name would appear in game.")]
     [SerializeField] private string skillName = "VANILLA";
 
-    [Header("Skill Attributes")] 
+    [Header("Skill Attributes")]
+    public List<EffectAction> immediateActions;
+    public List<EffectAction> appliedModifiers;
+    /*
     public float damageAmount = 5f;
     public float healAmount = 0f;
     public float resistanceAmount = 0f;
     public float speedIncreaseAmount = 0f;
     public float attackIncreaseAmount = 0f;
+    */
     
     public String GetSkillID() { return skillID; }
     public string GetSkillName() { return skillName; }
