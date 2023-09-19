@@ -1,7 +1,4 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 public class SkillAction {
     private SkillObject _data;
@@ -26,7 +23,7 @@ public class SkillAction {
         _data = data;
     }
 
-    public override String ToString() {
+    public override string ToString() {
         return _data.GetSkillName();
     }
 
@@ -46,5 +43,33 @@ public class SkillAction {
     public void Clear() {
         _data = null;
         _target = null;
+    }
+}
+
+public class StatIteration {
+
+    private readonly ActorData baseData;
+
+    public int Attack { get; private set; }
+    public int Defense { get; private set; }
+    public int StaminaRegen { get; private set; }
+
+    public StatIteration(ActorData data) {
+        baseData = data;
+        Reset();
+    }
+
+    public void Reset() {
+        Attack = baseData.BaseAttack();
+        Defense = baseData.BaseDefense();
+        StaminaRegen = baseData.StaminaRegenRate();
+    }
+
+    public void ComputeModifiers(List<EffectModifier> mods) {
+        foreach (EffectModifier mod in mods) {
+            Attack = (int) (mod.attackModifier * Attack);
+            Defense = (int) (mod.defenseModifier * Defense);
+            StaminaRegen = (int) (mod.staminaRegenModifier * StaminaRegen);
+        }
     }
 }

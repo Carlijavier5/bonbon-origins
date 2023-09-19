@@ -6,7 +6,8 @@ using UnityEngine;
 public class Actor : MonoBehaviour, IComparable<Actor>
 {
     #region Data Attributes
-    [SerializeField] public ActorData data;
+    [SerializeField] public readonly ActorData data;
+    public StatIteration ActiveData { get; private set; }
     [SerializeField] private string uniqueID;
     #endregion Data Attributes
     
@@ -18,17 +19,19 @@ public class Actor : MonoBehaviour, IComparable<Actor>
     
     #region Variable Attributes
 
-    [SerializeField] private float _hitpoints;
+    [SerializeField] private int _hitpoints;
     private bool _defeated;
     private int _stamina;
 
     #endregion Variable Attributes
 
-    #region Level Skills & Bonbons
+    #region Level Skills, Bonbons & Modifiers
 
     protected List<SkillObject> skillList;
 
     protected List<BonbonObject> bonbonList;
+
+    protected List<Effect> effectList;
 
     #endregion
 
@@ -45,6 +48,7 @@ public class Actor : MonoBehaviour, IComparable<Actor>
     }
 
     protected virtual void InitializeAttributes() {
+        ActiveData = new StatIteration(data);
         _hitpoints = data.MaxHitpoints();
         _stamina = data.MaxStamina();
         _defeated = false;
@@ -52,8 +56,37 @@ public class Actor : MonoBehaviour, IComparable<Actor>
 
     protected virtual void InitializeLevelObjects() { }
 
+    public void TurnStart() {
+        List<int> spentEffects = new List<int>();
+        for (int i = 0; i < effectList.Count; i++) {
+            effectList[i].PerformActions(ActiveData, this);
+            if (effectList[i].IsSpent()) spentEffects.Add(i);
+        } RemoveEffects(spentEffects);
+    }
+
+    private void ComputeStats() {
+        List<EffectModifier> modifiers = new List<EffectModifier>();
+        foreach (BonbonObject bonbon in bonbonInventory) {
+            modifiers.AddRange(bonbon.effects);
+        } foreach (Effect effect in effectList) {
+            modifiers.Add(effect.modifiers);
+        } ActiveData.ComputeModifiers(modifiers);
+    }
+
+    public void ApplyEffects(List<Effect> effects) {
+        effectList.AddRange(effects);
+        ComputeStats();
+    }
+
+    public void RemoveEffects(List<int> effectIndices) {
+        foreach (int effectIndex in effectIndices) effectList.RemoveAt(effectIndex);
+        ComputeStats();
+    }
+
     //Returns true if Actor has no remaining health.
-    public bool DepleteHitpoints(float damage) {
+    public bool DepleteHitpoints(int damage) {
+        damage *= ActiveData.Defense / 100;
+
         if (_hitpoints - damage <= 0) {
             _hitpoints = 0;
             _defeated = true;
@@ -66,7 +99,7 @@ public class Actor : MonoBehaviour, IComparable<Actor>
     
     //Returns true if over maximum hitpoints.
     //Does not heal if Actor is defeated.
-    public bool RestoreHitpoints(float heal) {
+    public bool RestoreHitpoints(int heal) {
         if (_hitpoints + heal > data.MaxHitpoints()) {
             _hitpoints = data.MaxHitpoints();
             return true;
@@ -75,6 +108,12 @@ public class Actor : MonoBehaviour, IComparable<Actor>
             _hitpoints += heal;
         }
         return false;
+    }
+
+    public void InsertBonbon(int slot, BonbonObject bonbon) {
+        if (bonbonInventory[slot] == null) {
+            bonbonInventory[slot] = bonbon;
+        } else Debug.LogError("Inventory slot was not available;");
     }
 
     public float Hitpoints() {
