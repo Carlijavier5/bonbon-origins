@@ -14,7 +14,60 @@ namespace BonbonAssetManager {
 
     #if UNITY_EDITOR
 
+    public class ModalAssetDeletion : EditorWindow {
+
+        /// <summary>
+        /// Confirms whether a Prefab Deletion Action should be performed;
+        /// </summary>
+        /// <param name="prefabName"> Name to display in the confirmation window; </param>
+        /// <returns> True if the asset should be deleted, false otherwise; </returns>
+        public static bool ConfirmAssetDeletion(string prefabName) {
+            fileName = prefabName;
+            var window = GetWindow<ModalAssetDeletion>("Confirm Asset Deletion");
+            window.maxSize = new Vector2(350, 105);
+            window.minSize = window.maxSize;
+            window.ShowModal();
+            return result;
+        }
+
+        /// <summary> Name to display in the confirmation window; </summary>
+        private static string fileName;
+        /// <summary> Result to return from the modal window; </summary>
+        private static bool result;
+
+        void OnGUI() {
+            using (new EditorGUILayout.VerticalScope(UIStyles.MorePaddingScrollView)) {
+                GUILayout.Label("Are you sure you want to delete the following asset?", UIStyles.CenteredLabel);
+                EditorGUILayout.Separator();
+                GUI.color = UIColors.Red;
+                GUILayout.Label(fileName, UIStyles.CenteredLabel);
+                EditorGUILayout.Separator();
+                using (new EditorGUILayout.HorizontalScope()) {
+                    if (GUILayout.Button("Delete")) {
+                        result = true;
+                        Close();
+                    } GUI.color = Color.white;
+                    if (GUILayout.Button("Cancel")) {
+                        result = false;
+                        Close();
+                    }
+                }
+            }
+        }
+    }
+
     public static class BAMUtils {
+
+        public static void ResetHotControl() {
+            GUIUtility.keyboardControl = 0;
+            GUIUtility.hotControl = 0;
+        }
+
+        public static string ToFilePath(string path, string name) => path + "/" + name + ".asset";
+
+        public static void DeleteAsset(string folderPath, string assetName) {
+            AssetDatabase.MoveAssetToTrash(ToFilePath(folderPath, assetName));
+        }
 
         public static List<T> InitializeList<T>() where T : Object {
             List<T> list = new List<T>();
@@ -25,7 +78,23 @@ namespace BonbonAssetManager {
             } return list;
         }
 
-        public static void DrawBonbonDragButton<T>(T draggedObject, GUIContent content, float buttonSize) where T : Object {
+        public static void DrawAssetDragButton<T>(T draggedObject, GUIContent content, Vector2 buttonSize) where T : Object {
+            using (new EditorGUILayout.VerticalScope(UIStyles.WindowBox)) {
+                Rect buttonRect = GUILayoutUtility.GetRect(buttonSize.x, buttonSize.y, GUILayout.ExpandWidth(false));
+                if (buttonRect.Contains(Event.current.mousePosition)) {
+                    bool mouseDown = Event.current.type == EventType.MouseDown;
+                    bool leftClick = Event.current.button == 0;
+                    if (mouseDown && leftClick) {
+                        DragAndDrop.PrepareStartDrag();
+                        DragAndDrop.StartDrag("Dragging");
+                        DragAndDrop.objectReferences = new Object[] { draggedObject };
+                        DragAndDrop.visualMode = DragAndDropVisualMode.Move;
+                    }
+                } GUI.Label(buttonRect, content, GUI.skin.button);
+            }
+        }
+
+        public static void DrawAssetDragButton<T>(T draggedObject, GUIContent content, float buttonSize) where T : Object {
             using (new EditorGUILayout.VerticalScope(UIStyles.WindowBox)) {
                 Rect buttonRect = GUILayoutUtility.GetRect(buttonSize, buttonSize, GUILayout.ExpandWidth(false));
                 if (buttonRect.Contains(Event.current.mousePosition)) {
@@ -37,15 +106,15 @@ namespace BonbonAssetManager {
                         DragAndDrop.objectReferences = new Object[] { draggedObject };
                         DragAndDrop.visualMode = DragAndDropVisualMode.Move;
                     }
-                }
-                GUI.Label(buttonRect, content, GUI.skin.button);
+                } GUI.Label(buttonRect, content, GUI.skin.button);
             }
         }
 
-        public static T DrawDragAcceptButton<T>(params GUILayoutOption[] options) where T : Object {
+        public static T DrawDragAcceptButton<T>(FieldUtils.DnDFieldType fieldType, CJToolAssets.DnDFieldAssets assets,
+                                                params GUILayoutOption[] options) where T : Object {
             using (new EditorGUILayout.VerticalScope(UIStyles.WindowBox)) {
                 T obj = null;
-                obj = EditorGUILayout.ObjectField(obj, typeof(T), false, options) as T;
+                obj = FieldUtils.DnDField(typeof(T), fieldType, assets, options) as T; //EditorGUILayout.ObjectField(obj, typeof(T), false, options) as T;
                 return obj;
             }
         }

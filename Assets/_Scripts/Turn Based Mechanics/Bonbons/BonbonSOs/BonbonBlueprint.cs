@@ -19,6 +19,10 @@ public class BonbonBlueprint : ScriptableObject {
     /// <summary> A dictionary containing the bonbons required to make the bonbon, mapped to the required quantity; </summary>
     public BonbonBlueprint[] recipe;
 
+    public BonbonBlueprint() {
+        recipe = new BonbonBlueprint[4];
+    }
+
     public BonbonObject InstantiateBonbon() {
         return new BonbonObject(this);
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using CJUtils;
+using PseudoDataStructures;
 
 /// <summary>
 /// Because the structure I devised for the MADGUI has been quite comfortable to work with, I'm building 
@@ -29,14 +30,14 @@ namespace BonbonAssetManager {
 
     public class BonbonManager : BonBaseTool {
 
-        private BonbonHierarchy bonbonHierarchy;
+        private BaseHierarchy<BonbonBlueprint> bonbonHierarchy;
         private BonbonBlueprint selectedBonbon;
         private List<BonbonBlueprint> bonbonList;
         private AssetCreator<BonbonBlueprint> assetCreator;
 
         public override void Initialize() {
             assetCreator = new AssetCreator<BonbonBlueprint>(MainGUI.assetPaths[(int) BAMGUI.ToolType.BonbonManager]);
-            bonbonHierarchy = BaseHierarchy<BonbonBlueprint>.CreateHierarchy<BonbonHierarchy>(this);
+            bonbonHierarchy = new BaseHierarchy<BonbonBlueprint>(this);
             bonbonHierarchy.OnPathSelection += BonbonManager_OnPathSelection;
             assetCreator.OnAssetCreation += bonbonHierarchy.ReloadHierarchy;
             UpdateBonbonList();
@@ -118,7 +119,7 @@ namespace BonbonAssetManager {
             for (int i = 0; i < rows + 1; i++) {
                 using (new EditorGUILayout.HorizontalScope()) {
                     for (int j = i * perRow; j < Mathf.Min((i + 1) * perRow, bonbonList.Count); j++) {
-                        BAMUtils.DrawBonbonDragButton(bonbonList[j], new GUIContent(bonbonList[j].texture), buttonSize);
+                        BAMUtils.DrawAssetDragButton(bonbonList[j], new GUIContent(bonbonList[j].texture), buttonSize);
                     }
                 }
             }
@@ -127,22 +128,27 @@ namespace BonbonAssetManager {
         private void DrawRecipeDropSlots() {
             EditorUtils.WindowBoxLabel("Recipe");
             GUI.enabled = false;
-            using (var scope = new EditorGUILayout.ScrollViewScope(recipeScroll, EditorStyles.textField, GUILayout.ExpandHeight(false))) {
+            using (var scope = new EditorGUILayout.ScrollViewScope(recipeScroll, EditorStyles.textField, 
+                                                                   GUILayout.ExpandHeight(false), GUILayout.Height(buttonSize * 2.5f))) {
                 GUI.enabled = true;
                 recipeScroll = scope.scrollPosition;
 
                 using (new EditorGUILayout.HorizontalScope()) {
-                    BonbonBlueprint acceptedBonbon = BAMUtils.DrawDragAcceptButton<BonbonBlueprint>(GUILayout.Width(buttonSize * 2),
+                    BonbonBlueprint acceptedBonbon = BAMUtils.DrawDragAcceptButton<BonbonBlueprint>(FieldUtils.DnDFieldType.Add,
+                                                                                                    MainGUI.assetRefs.dndFieldAssets,
+                                                                                                    GUILayout.Width(buttonSize * 2),
                                                                                                     GUILayout.Height(buttonSize * 2));
                     if (acceptedBonbon != null) UpdateBonbonRecipe(selectedBonbon, acceptedBonbon);
 
                     using (new EditorGUILayout.VerticalScope()) {
                         using (new EditorGUILayout.HorizontalScope()) {
                             foreach (BonbonBlueprint bonbon in selectedBonbon.recipe) {
-                                if (bonbon != null) BAMUtils.DrawBonbonDragButton(bonbon, new GUIContent(bonbon.texture), buttonSize);
+                                if (bonbon != null) BAMUtils.DrawAssetDragButton(bonbon, new GUIContent(bonbon.texture), buttonSize);
                                 else DrawEmptyBox();
                             }
-                        } BonbonBlueprint removeObject = BAMUtils.DrawDragAcceptButton<BonbonBlueprint>(GUILayout.Width(buttonSize * 4.6f),
+                        } BonbonBlueprint removeObject = BAMUtils.DrawDragAcceptButton<BonbonBlueprint>(FieldUtils.DnDFieldType.Remove,
+                                                                                                        MainGUI.assetRefs.dndFieldAssets,
+                                                                                                        GUILayout.Width(buttonSize * 4.4f),
                                                                                                         GUILayout.Height(buttonSize * 0.8f));
                         if (removeObject != null) RemoveFromRecipe(selectedBonbon, removeObject);
                     }
@@ -209,7 +215,7 @@ namespace BonbonAssetManager {
 
     public class SkillManager : BonBaseTool {
 
-        private SkillHierarchy skillHierarchy;
+        private BaseHierarchy<SkillObject> skillHierarchy;
         private SkillObject selectedSkill;
         private Editor skillInspector;
         private AssetCreator<SkillObject> assetCreator;
@@ -219,7 +225,7 @@ namespace BonbonAssetManager {
 
         public override void Initialize() {
             assetCreator = new AssetCreator<SkillObject>(MainGUI.assetPaths[(int) BAMGUI.ToolType.SkillManager]);
-            skillHierarchy = BaseHierarchy<SkillObject>.CreateHierarchy<SkillHierarchy>(this);
+            skillHierarchy = new BaseHierarchy<SkillObject>(this);
             skillHierarchy.OnPathSelection += SkillHierarchy_OnPathSelection;
             assetCreator.OnAssetCreation += skillHierarchy.ReloadHierarchy;
             actionTypes = ActionUtils.FetchAssemblyChildren(new System.Type[] { typeof(ImmediateAction.Generic),
@@ -265,7 +271,7 @@ namespace BonbonAssetManager {
                         if (ActionUtils.DrawAvailableActions(ref selectedSkill.immediateActions,
                                                              ref foundActions, actionTypes)) EditorUtility.SetDirty(selectedSkill);
                     } else {
-                        EditorUtils.DrawScopeCenteredText("Select a Bonbon to edit it here;");
+                        EditorUtils.DrawScopeCenteredText("Select a Skill to edit it here;");
                     }
                 }
             }
@@ -274,7 +280,7 @@ namespace BonbonAssetManager {
 
     public class EffectManager : BonBaseTool {
 
-        private EffectHierarchy effectHierarchy;
+        private BaseHierarchy<EffectBlueprint> effectHierarchy;
         private EffectBlueprint selectedEffect;
         private Editor effectInspector;
         private AssetCreator<EffectBlueprint> assetCreator;
@@ -284,7 +290,7 @@ namespace BonbonAssetManager {
 
         public override void Initialize() {
             assetCreator = new AssetCreator<EffectBlueprint>(MainGUI.assetPaths[(int) BAMGUI.ToolType.EffectManager]);
-            effectHierarchy = BaseHierarchy<EffectBlueprint>.CreateHierarchy<EffectHierarchy>(this);
+            effectHierarchy = new BaseHierarchy<EffectBlueprint>(this);
             effectHierarchy.OnPathSelection += EffectHierarchy_OnPathSelection;
             assetCreator.OnAssetCreation += effectHierarchy.ReloadHierarchy;
             actionTypes = ActionUtils.FetchAssemblyChildren(new System.Type[] { typeof(ImmediateAction.Generic),
@@ -330,7 +336,7 @@ namespace BonbonAssetManager {
                         if (ActionUtils.DrawAvailableActions(ref selectedEffect.actions,
                                                              ref foundActions, actionTypes)) EditorUtility.SetDirty(selectedEffect);
                     } else {
-                        EditorUtils.DrawScopeCenteredText("Select a Bonbon to edit it here;");
+                        EditorUtils.DrawScopeCenteredText("Select an Effect to edit it here;");
                     }
                 }
             }
@@ -339,15 +345,19 @@ namespace BonbonAssetManager {
 
     public class ActorManager : BonBaseTool {
 
-        private ActorHierarchy actorHierarchy;
+        private BaseHierarchy<ActorData> actorHierarchy;
         private ActorData selectedActor;
-        private List<BonbonBlueprint> bonbonList;
-        private List<SkillObject> skillList;
         private AssetCreator<ActorData> assetCreator;
+
+        private List<BonbonBlueprint> bonbonList => MainGUI.GlobalBonbonList;
+        private List<SkillObject> skillList => MainGUI.GlobalSkillList;
+
+        private List<SkillObject>[] skillMap;
+        private List<BonbonBlueprint>[] bonbonMap;
 
         public override void Initialize() {
             assetCreator = new AssetCreator<ActorData>(MainGUI.assetPaths[(int) BAMGUI.ToolType.ActorManager]);
-            actorHierarchy = BaseHierarchy<ActorData>.CreateHierarchy<ActorHierarchy>(this);
+            actorHierarchy = new BaseHierarchy<ActorData>(this);
             actorHierarchy.OnPathSelection += ActorManager_OnPathSelection;
             assetCreator.OnAssetCreation += actorHierarchy.ReloadHierarchy;
         }
@@ -357,7 +367,27 @@ namespace BonbonAssetManager {
             SetSelectedActor(AssetDatabase.LoadAssetAtPath<ActorData>(path));
         }
 
-        private void SetSelectedActor(ActorData data) => selectedActor = data;
+        private void SetSelectedActor(ActorData data) {
+            selectedActor = data;
+            InitializeActorMaps();
+        }
+
+        private void InitializeActorMaps() {
+            if (selectedActor.skillMap != null) {
+                skillMap = selectedActor.skillMap.ToListArray();
+                selectedActor.skillMap = new ArrayArray<SkillObject>(VerifyMapSize(skillMap));
+            } if (selectedActor.bonbonMap != null) {
+                bonbonMap = selectedActor.bonbonMap.ToListArray();
+                selectedActor.bonbonMap = new ArrayArray<BonbonBlueprint>(VerifyMapSize(bonbonMap));
+            }
+        }
+
+        private List<T>[] VerifyMapSize<T>(List<T>[] listArr) {
+            List<T>[] outputArr = new List<T>[8];
+            if (listArr.Length < 8) System.Array.Copy(listArr, outputArr, listArr.Length);
+            else outputArr = listArr;
+            return outputArr;
+        }
 
         public override void ShowGUI() {
             using (new EditorGUILayout.HorizontalScope()) {
@@ -365,17 +395,84 @@ namespace BonbonAssetManager {
                     actorHierarchy.ShowGUI();
                     assetCreator.ShowCreator();
                 }
-                    
+                
                 using (new EditorGUILayout.VerticalScope()) {
                     MainGUI.DrawToolbar();
 
                     if (selectedActor != null) {
-                        
+                        DrawActorStats();
+                        using (new EditorGUILayout.HorizontalScope()) {
+                            DrawMap(skillMap);
+                        }
                     } else {
-                        EditorUtils.DrawScopeCenteredText("Select a Bonbon to edit it here;");
+                        EditorUtils.DrawScopeCenteredText("Select an Actor to edit it here;");
                     }
                 }
             }
+        }
+
+        private void DrawActorStats() {
+            CJToolAssets.StatFieldAssets statAssets = MainGUI.assetRefs.statFieldAssets;
+            using (new EditorGUILayout.VerticalScope(UIStyles.WindowBox)) {
+                using (var scope = new EditorGUI.ChangeCheckScope()) {
+                    EditorUtils.WindowBoxLabel("Actor Notation");
+                    using (new EditorGUILayout.VerticalScope(UIStyles.WindowBox)) {
+                        selectedActor.SetDisplayName(EditorGUILayout.TextField("Actor Name", selectedActor.DisplayName));
+                        selectedActor.SetID(EditorGUILayout.TextField("Actor ID", selectedActor.ID));
+                    } EditorUtils.WindowBoxLabel("Actor Stats");
+                    using (new EditorGUILayout.HorizontalScope(UIStyles.WindowBox)) {
+                        using (new EditorGUILayout.VerticalScope()) {
+                            selectedActor.SetMaxHitpoints(EditorGUILayout.IntField(new GUIContent(" Max Hitpoints", statAssets.hitpoints),
+                                                                selectedActor.MaxHitpoints));
+                            selectedActor.SetMaxStamina(EditorGUILayout.IntField(new GUIContent(" Max Stamina", statAssets.stamina),
+                                                                selectedActor.MaxStamina));
+                            selectedActor.SetStaminaRegenRate(EditorGUILayout.IntField(new GUIContent(" Stamina Regen", statAssets.staminaRegen),
+                                                                selectedActor.StaminaRegenRate));
+                        } EditorGUILayout.Separator();
+                        using (new EditorGUILayout.VerticalScope()) {
+                            selectedActor.SetBasePotency(EditorGUILayout.IntField(new GUIContent(" Base Potency", statAssets.attack),
+                                                                selectedActor.BasePotency));
+                            selectedActor.SetBaseDefense(EditorGUILayout.IntField(new GUIContent(" Base Defense", statAssets.defense),
+                                                                selectedActor.BaseDefense));
+                            selectedActor.SetBaseSpeed(EditorGUILayout.IntField(new GUIContent(" Base Speed", statAssets.speed),
+                                                                selectedActor.BaseSpeed));
+                        }
+                    } if (scope.changed) EditorUtility.SetDirty(selectedActor);
+                }
+            }
+        }
+
+        private void DrawMap<T>(List<T>[] listArr) where T : ScriptableObject {
+            using (new EditorGUILayout.VerticalScope(UIStyles.WindowBox)) {
+                EditorUtils.WindowBoxLabel("Actor Skill Map");
+                for (int i = 0; i < listArr.Length; i++) {
+                    using (new EditorGUILayout.HorizontalScope(UIStyles.WindowBox)) {
+                        EditorUtils.WindowBoxLabel($"Level {i + 1}", GUILayout.Width(48), GUILayout.Height(45));
+                        DrawLevelDropdown<T>(listArr[i], 35);
+                    }
+                } 
+            }
+        }
+
+        private void DrawLevelDropdown<T>(List<T> list, float buttonSize) where T : ScriptableObject {
+            T acceptedElement = BAMUtils.DrawDragAcceptButton<T>(FieldUtils.DnDFieldType.Add,
+                                                                 MainGUI.assetRefs.dndFieldAssets, GUILayout.Width(buttonSize),
+                                                                 GUILayout.Height(buttonSize));
+            if (acceptedElement != null && !list.Contains(acceptedElement)) list.Add(acceptedElement);
+            using (var scope = new EditorGUILayout.ScrollViewScope(Vector2.zero, false, false, GUI.skin.horizontalScrollbar, GUIStyle.none, GUI.skin.scrollView,
+                                                                   GUILayout.ExpandWidth(true), GUILayout.Height(buttonSize * 1.6f))) {
+                //lowerScroll = scope.scrollPosition;
+                for (int i = 0; i < list.Count; i++) {
+                    using (new EditorGUILayout.HorizontalScope(UIStyles.WindowBox)) {
+                        BAMUtils.DrawAssetDragButton(list[i], new GUIContent(list[i].name),
+                                                     new Vector2(EditorUtils.MeasureTextWidth(list[i].name, GUI.skin.font) + 15, buttonSize));
+                    }
+                }
+            }
+            T removedElement = BAMUtils.DrawDragAcceptButton<T>(FieldUtils.DnDFieldType.Remove,
+                                                                MainGUI.assetRefs.dndFieldAssets, GUILayout.Width(buttonSize),
+                                                                GUILayout.Height(buttonSize));
+            if (removedElement != null) list.Remove(removedElement);
         }
     }
 }

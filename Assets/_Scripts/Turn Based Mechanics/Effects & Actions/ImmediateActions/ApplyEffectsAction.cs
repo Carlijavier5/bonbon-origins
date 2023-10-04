@@ -32,12 +32,14 @@ public class ApplyEffectsAction : ImmediateAction.SkillOnly {
 
 #if UNITY_EDITOR
 
+    private CJToolAssets.DnDFieldAssets fieldAssets;
     private List<EffectBlueprint> globalEffects;
     private int buttonSize = 50;
     private Vector2 upperScroll;
     private Vector2 lowerScroll;
 
     protected override void DrawActionGUI() {
+        if (fieldAssets == null) fieldAssets = FieldUtils.GetDnDFieldAssets();
         if (globalEffects == null) globalEffects = BonbonAssetManager.BAMUtils.InitializeList<EffectBlueprint>();
         DrawEffectGroup();
     }
@@ -50,24 +52,32 @@ public class ApplyEffectsAction : ImmediateAction.SkillOnly {
        
         using (new EditorGUILayout.VerticalScope()) {
             using (new EditorGUILayout.HorizontalScope(UIStyles.WindowBox)) {
-                using (var scope = new EditorGUILayout.ScrollViewScope(upperScroll, GUILayout.ExpandWidth(true), GUILayout.Height(buttonSize * 1.35f))) {
+                using (var scope = new EditorGUILayout.ScrollViewScope(upperScroll, false, false, GUI.skin.horizontalScrollbar, GUIStyle.none, GUI.skin.scrollView,
+                                                                       GUILayout.ExpandWidth(true), GUILayout.Height(buttonSize * 1.35f))) {
                     upperScroll = scope.scrollPosition;
                 
                     for (int i = 0; i < globalEffects.Count; i++) {
-                        BonbonAssetManager.BAMUtils.DrawBonbonDragButton(globalEffects[i], new GUIContent(globalEffects[i].name), buttonSize);
+                        using (new EditorGUILayout.HorizontalScope(UIStyles.WindowBox)) {
+                            BonbonAssetManager.BAMUtils.DrawAssetDragButton(globalEffects[i], new GUIContent(globalEffects[i].name), buttonSize);
+                        }
                     }
                 }
             }
             using (new EditorGUILayout.HorizontalScope(UIStyles.WindowBox)) {
-                EffectBlueprint acceptedEffect = BonbonAssetManager.BAMUtils.DrawDragAcceptButton<EffectBlueprint>(GUILayout.Width(buttonSize * 2),
+                EffectBlueprint acceptedEffect = BonbonAssetManager.BAMUtils.DrawDragAcceptButton<EffectBlueprint>(FieldUtils.DnDFieldType.Add,
+                                                                                                                   fieldAssets, GUILayout.Width(buttonSize),
                                                                                                                    GUILayout.Height(buttonSize));
-                if (acceptedEffect != null) AddEffect(acceptedEffect);
-                using (var scope = new EditorGUILayout.ScrollViewScope(lowerScroll, GUILayout.ExpandWidth(true), GUILayout.Height(buttonSize * 1.35f))) {
+                if (acceptedEffect != null && !effects.Contains(acceptedEffect)) AddEffect(acceptedEffect);
+                using (var scope = new EditorGUILayout.ScrollViewScope(lowerScroll, false, false, GUI.skin.horizontalScrollbar, GUIStyle.none, GUI.skin.scrollView,
+                                                                       GUILayout.ExpandWidth(true), GUILayout.Height(buttonSize * 1.35f))) {
                     lowerScroll = scope.scrollPosition;
                     for (int i = 0; i < effects.Count; i++) {
-                        BonbonAssetManager.BAMUtils.DrawBonbonDragButton(effects[i], new GUIContent(effects[i].name), buttonSize);
+                        using (new EditorGUILayout.HorizontalScope(UIStyles.WindowBox)) {
+                            BonbonAssetManager.BAMUtils.DrawAssetDragButton(effects[i], new GUIContent(effects[i].name), buttonSize);
+                        }
                     }
-                } EffectBlueprint removedEffect = BonbonAssetManager.BAMUtils.DrawDragAcceptButton<EffectBlueprint>(GUILayout.Width(buttonSize * 2),
+                } EffectBlueprint removedEffect = BonbonAssetManager.BAMUtils.DrawDragAcceptButton<EffectBlueprint>(FieldUtils.DnDFieldType.Remove,
+                                                                                                                    fieldAssets, GUILayout.Width(buttonSize),
                                                                                                                     GUILayout.Height(buttonSize));
                 if (removedEffect != null) RemoveEffect(removedEffect);
             } 
